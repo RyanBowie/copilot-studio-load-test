@@ -1,5 +1,13 @@
 # Results: load testing a Copilot Studio agent inside Microsoft 365 Copilot fair use
 
+> **Published copy.** This is the working findings document from the project, reproduced in
+> full. It was written for someone holding the whole repository, so it refers in places to a
+> SQLite database and CSV exports that are **not** published, because those carry tenant
+> identifiers that do not pass through redaction. Everything they contain is summarised here or
+> explorable in the [interactive report](https://ryanbowie.github.io/copilot-studio-load-test/),
+> which includes every conversation, searchable.
+
+
 Target agent: **IT Policy and Guidance Assistant** (`contoso_itPolicyAndGuidanceAssistant`)
 Environment: `Contoso - Dev` (`00000000-0000-0000-0000-000000000000`), Regular type
 Identity: `user-a@contoso.onmicrosoft.com`, Microsoft 365 Copilot licensed
@@ -1535,7 +1543,7 @@ times out of 66,769, which is 1.70%.
 
 Full detail, including response time percentiles split into acknowledgement and generation, a
 per run and per stage breakdown, the 25 most frequent answers and three complete answers
-verbatim, is in **[`results/ANSWERS-REPORT.md`](results/ANSWERS-REPORT.md)**. Regenerate it with
+verbatim, is in the **Answers** tab of the interactive report. Regenerate it with
 `npm run answers`. It also writes `results/answers-all.csv` (every distinct answer with its
 count and full text) and `results/turns-all.csv` (all 90,384 turns with every timing column).
 
