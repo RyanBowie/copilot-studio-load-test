@@ -22,13 +22,41 @@ So the work was split along two axes. Most experiments varied **rate** with very
 experiments varied **concurrency** directly, specifically to test whether concurrency mattered at
 all. It did not, and proving that was one of the more useful results.
 
-## 2. How it reached the agent
+## 2. The agent under test
+
+Deliberately an ordinary agent rather than a tuned one. Nothing about it was built for this test,
+so the ceiling measured here is the one a normal published agent runs into.
+
+| Setting | What it was | Why it matters here |
+| --- | --- | --- |
+| Agent type | A standard Copilot Studio agent, published to Microsoft 365 Copilot and Teams | Nothing bespoke, so the result is not an artefact of an unusual configuration |
+| Environment | Production type, United States region | This matters when comparing against your own: trial and developer environments are documented at 10 messages a minute rather than 100 |
+| Orchestration | Generative | This is the setting the quota actually meters. The refusal code names generative orchestration directly |
+| General knowledge | Enabled | This is what answers the test prompt, and it is why a measured turn performs no retrieval |
+| Knowledge sources | Three SharePoint sites | Connected throughout but never retrieved from by the prompt used, which isolates generative latency and keeps the run off the tenant graph grounding billing line |
+| Topics | Stock topics with very light customisation | There is almost no authored logic in the measured path, so nothing agent side is shaping the result |
+| Tools | Four, three connectors and a flow, including Send an email (V2). Live for every run up to E8 | Deleting all of them and republishing changed nothing: 7,610 of 12,000 messages were still refused with the identical code |
+| Web search | Enabled before the final run | Not a planner tool, and it did not move the ceiling. It stays credit free on the authenticated path |
+
+Two consequences worth stating plainly.
+
+**The knowledge sources were connected but idle.** The test prompt is answered from general
+knowledge, so no measured turn performed SharePoint retrieval. That is exactly what makes the
+latency figures a clean measurement of generative answer time, and it is also the main limit on how
+far they generalise. An agent that retrieves on every turn would be slower end to end. It would
+still meet the same arrival rate ceiling, because that ceiling is imposed before generation starts.
+
+**There was very little to tune.** Because the customisation is so light, there is almost nothing
+about this agent that could plausibly have been the cause of the ceiling, which is what made the
+tool removal experiment worth running to completion rather than arguing about.
+
+## 3. How it reached the agent
 
 | Step | What was used | Why it had to be this |
 | --- | --- | --- |
 | Identity | Two real Microsoft 365 Copilot licensed accounts, signed in with a delegated token. One carried 89,410 messages, the second 974 during the multi account test | The no charge billing path requires the agent to run under an authenticated licensed user. A service principal or unlicensed identity would have consumed credits |
 | Transport | Microsoft 365 Agents SDK `CopilotStudioClient`, the DirectToEngine channel | It preserves the licensed user identity end to end, so it shares both the billing treatment and the environment quota with the real Teams surface |
-| Agent | A published Copilot Studio agent surfaced in Microsoft 365 Copilot, with every tool removed | Tools add consent cards that stall an unattended run, and tool call time contaminates the latency figure. Removing them makes every turn a pure generative answer |
+| Agent | A published Copilot Studio agent surfaced in Microsoft 365 Copilot. Tools were live up to E8 and deleted for E9 onwards | The prompt never triggers a tool, so no consent card can stall an unattended run and no tool call time contaminates the latency figure. Deleting the tools was then tested directly, and changed nothing |
 | Conversation | One fresh conversation per message | Models distinct users. Reusing one conversation would let the service carry context forward, which is not what a crowd looks like |
 | Storage | SQLite, one row per message, batched writes, write ahead logging | A 48,000 message run has to survive a crash, and the full response text must be kept because that is the only place a refusal is visible |
 
@@ -36,14 +64,14 @@ The prompt was deliberately ungrounded: *"What is the best movie right now"*. It
 generative answer with no tenant graph grounding, which keeps the run on a single billing line and
 removes retrieval time as a confounding variable.
 
-## 3. Why not browser automation
+## 4. Why not browser automation
 
 The obvious approach, driving the real chat window with headless Chromium, does not scale to this
 question. Fifty thousand browser contexts would need several terabytes of RAM. More importantly it
 would measure the browser rather than the service. The SDK path uses a few hundred bytes per in
 flight request, so a single laptop can saturate the environment many times over.
 
-## 4. What was recorded
+## 5. What was recorded
 
 One row per message: run and stage ids, the identity used, conversation and activity ids, the
 prompt, send time, first activity time, first token time, completion time, both derived durations,
@@ -55,7 +83,7 @@ error headers, so a harness that recorded only status codes would have reported 
 
 Timings use a monotonic clock so a multi hour run is immune to wall clock adjustment.
 
-## 5. The experiments
+## 6. The experiments
 
 | Experiment | Question | Method |
 | --- | --- | --- |
@@ -73,7 +101,7 @@ other questions, so the admission model risked being a curve fitted to its own d
 thing only, and the predicted column was committed before the run. Mean absolute error came out at
 **2.3 percentage points** across a sixfold range of arrival windows.
 
-## 6. Analysis choices that changed the answer
+## 7. Analysis choices that changed the answer
 
 Three of these were mistakes caught during the work, and each one had produced a plausible but wrong
 result first.
@@ -94,7 +122,7 @@ result first.
   every refusal has a different SHA-256. Counting distinct hashes without normalising those two
   fields inflates the distinct answer count. All refusals collapse to exactly one template.
 
-## 7. Reproducing this
+## 8. Reproducing this
 
 The findings that transfer are the *shape* of the result rather than the exact constants: that the
 binding limit is a rate, that it is scoped to the environment, that refusals are invisible at the

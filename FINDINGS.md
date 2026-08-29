@@ -8,7 +8,7 @@
 > which includes every conversation, searchable.
 
 
-Target agent: **IT Policy and Guidance Assistant** (`contoso_itPolicyAndGuidanceAssistant`)
+Target agent: **IT Policy and Guidance Assistant** (`IT Policy and Guidance Assistant`)
 Environment: `Contoso - Dev` (`00000000-0000-0000-0000-000000000000`), Regular type
 Identity: `user-a@contoso.onmicrosoft.com`, Microsoft 365 Copilot licensed
 Prompt: "What is the best movie right now" (generative, ungrounded)
@@ -92,6 +92,35 @@ throttle rate**, which is the "50,000 users" deliverable in the only form the se
 serialised over time rather than fired at once. **Credit consumption was checked in the Power
 Platform admin center after testing and no Copilot Credits were consumed**, across all 90,384
 messages, so credit free here is verified rather than assumed.
+
+## The agent under test
+
+Deliberately an ordinary agent rather than a tuned one, so the ceiling measured here is the one a
+normal published agent runs into.
+
+| Setting | What it was |
+| --- | --- |
+| Agent type | A standard Copilot Studio agent, published to Microsoft 365 Copilot and Teams |
+| Environment | Production type, United States region |
+| Orchestration | Generative |
+| General knowledge | Enabled |
+| Knowledge sources | Three SharePoint sites |
+| Topics | Stock topics with very light customisation |
+| Tools | Four, three connectors and a flow, including Send an email (V2). Live for every run up to E8, deleted for E9 and E10 |
+| Web search | Enabled before the final run |
+
+Two consequences matter for reading the rest of this document.
+
+**The SharePoint sources were connected but never retrieved from.** The test prompt is answered
+from general knowledge, so no measured turn performed retrieval. That is what makes the latency
+figures a clean measurement of generative answer time, and it keeps the run off the tenant graph
+grounding billing line entirely. It is also the main limit on how far the latency numbers
+generalise: an agent that retrieves on every turn would be slower end to end, though it would still
+meet the same arrival rate ceiling, because that ceiling is applied before generation begins.
+
+**There was very little to tune.** With customisation this light, there is almost nothing about
+this agent that could plausibly have caused the ceiling. That is what made deleting the tools worth
+testing to completion rather than arguing about, and the result is below.
 
 ## Scope: this is a generative answer ceiling, not a tool ceiling
 
@@ -829,7 +858,7 @@ you can engineer around on the client, because the server hands out the same thr
 
 This is the finding with the largest operational consequence.
 
-A second, entirely unrelated agent (`contoso_secondAgent`) in the **same Dataverse environment**
+A second, entirely unrelated agent (`Minecraft Agent`) in the **same Dataverse environment**
 was probed at a trivial 6 messages per minute, first against an idle environment and then
 *concurrently* with the primary agent being driven at 400 RPM.
 
@@ -1298,7 +1327,7 @@ Two independent checks settled it:
    returns a `DynamicPlanReceived` activity that names every tool the planner was handed:
 
    ```
-   steps: ["contoso_itPolicyAndGuidanceAssistant.action.Office365Outlook-SendanemailV2"]
+   steps: ["IT Policy and Guidance Assistant.action.Office365Outlook-SendanemailV2"]
    toolDefinitions: [{ "$kind":"ToolDefinition", "displayName":"Send an email (V2)" }]
    ```
 

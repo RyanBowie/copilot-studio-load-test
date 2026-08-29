@@ -115,10 +115,11 @@ asserted programmatically. **It was checked by hand after testing: no credits we
 ## A note on the numbers being redacted
 
 This ran against a real tenant, so the published version replaces the tenant name, the two user
-principal names, the Dataverse organisation URL, the environment id and the agent schema name with
-`contoso` placeholders. Nothing analytical changes, because every finding is about rates and
-behaviour rather than identity. The redaction is a build step with a post check that fails the build
-if any identifier survives, rather than a manual pass over an 11 MB file.
+principal names, the Dataverse organisation URL, the environment id and the Dataverse publisher
+prefix with `contoso` placeholders. The agents themselves are named normally, because there is
+nothing sensitive about an agent's display name. Nothing analytical changes, because every finding
+is about rates and behaviour rather than identity. The redaction is a build step with a post check
+that fails the build if any identifier survives, rather than a manual pass over an 11 MB file.
 
 ## Honest limitations
 
