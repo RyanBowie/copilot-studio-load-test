@@ -122,7 +122,46 @@ result first.
   every refusal has a different SHA-256. Counting distinct hashes without normalising those two
   fields inflates the distinct answer count. All refusals collapse to exactly one template.
 
-## 8. Reproducing this
+## 8. How the result was replicated
+
+The whole 50,000 message campaign was run a second time, on a later day, so the headline is a
+repeated measurement rather than a single observation. Everything that could be held constant was:
+the same agent, the same environment, the same single user account, the same prompt, the same 150
+messages a minute, and the same harness build. Only the date changed.
+
+The two campaigns are kept separate rather than pooled. A sustained run configured for the full
+target opens a new campaign, and a smaller run attaches to the campaign before it as a top up, which
+is how the first campaign's interrupted tail is stitched back on. Without that rule a repeat run
+would silently double the headline total and make one 50,000 message result look like a 100,000
+message one.
+
+Both campaigns are trimmed the same way. Each is cut at its first gap of more than ten minutes
+between messages, which is where the host machine suspended, and the contiguous block of timeouts
+that were in flight at that moment is removed with it. Those failed because the laptop went to
+sleep, not because the service refused them. A timeout anywhere else in a run is a genuine failure
+and is deliberately left in the figures.
+
+## 9. How a capacity dip is detected
+
+Repeating the campaign showed that the environment's capacity is not constant, so the analysis
+needed a way to find those stretches without hand-picking them.
+
+Every minute of a campaign is scored. A minute qualifies as degraded when the offered load was at
+or under the measured ceiling and yet more than one percent of it was refused. The load condition
+matters: it means a dip can never be an overload being correctly refused. Consecutive qualifying
+minutes are grouped into an episode, short clean gaps inside an episode are bridged because
+recovery is ragged rather than instant, and an episode is only reported if it lasts at least three
+minutes. Latency is compared against the campaign's own clean minutes, so a generally slower day is
+not mistaken for a dip.
+
+Each episode also carries a **send reordering** figure, which is what rules out the test client as
+the cause. Messages are dispatched in strict sequence, but a message's send time is stamped after
+the service accepts the conversation, so a slow accept lets turns land out of order. A stalled
+client resumes and fires its backlog in order; only variable service-side latency scrambles it.
+Comparing an episode's reordering against the campaign's clean baseline therefore separates a
+service that has slowed from a client that has stalled.
+
+## 10. Reproducing this
 
 The findings that transfer are the *shape* of the result rather than the exact constants: that the
 binding limit is a rate, that it is scoped to the environment, that refusals are invisible at the

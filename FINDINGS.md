@@ -1631,3 +1631,93 @@ npm run support-pack                # Microsoft throughput increase evidence bun
 
 Raw per-message data for every run is in `data/results.sqlite`, and per-run CSVs are written to
 `results/`.
+
+## The whole 50,000 was run a second time (2026-08-30)
+
+A single result is an anecdote, so the entire campaign was repeated end to end on a different day
+with an identical configuration: same agent, same single account, same prompt, same deliberate 150
+messages a minute. Nothing changed except the date.
+
+| Measure | Run 1, 28 Aug | Run 2, 30 Aug | Change |
+| --- | --- | --- | --- |
+| Messages sent | 50,182 | 50,019 | -163 |
+| Answered | 50,051 | 48,904 | -1,147 |
+| Answered, percent | **99.74%** | **97.77%** | **-1.97 pts** |
+| Refused | 14 (0.028%) | 1,101 (2.201%) | +1,087 |
+| Other failures | 117 | 14 | -103 |
+| Offered rate | 150/min | 150/min | no change |
+| Median answer time | 4.5 s | 4.3 s | -0.26 s |
+| Answered per clock hour | 8,910 | 8,849 | -60 |
+
+The headline reproduced. Both campaigns pushed 50,000 credit-free messages through a single
+licensed account at a rate the documented quota says should have been refused twenty five times
+over, and both were answered essentially in full.
+
+But the second campaign refused seventy eight times as many messages as the first, and chasing that
+gap produced the most useful finding in this report.
+
+### The ceiling moves
+
+**The difference is not spread across the run. Every single one of the second campaign's 1,101
+refusals falls inside one of three short degraded episodes**, and outside those minutes the two
+campaigns are indistinguishable.
+
+A degraded episode is counted only where the offered load for that minute was at or under the
+measured ceiling, so it can never be an overload being correctly refused. Three consecutive minutes
+above one percent refused are required before a stretch is reported, and short clean gaps are
+bridged so that a ragged recovery is reported as one episode rather than chopped into fragments.
+
+| Campaign | When (UTC) | Minutes | Offered/min | Answered/min | Refused | Answer time | vs baseline | Sends reordered |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Run 1 | 08-29 01:32 to 01:38 | 7 | 150 | 148 | 1.24% | 5.9 s | 1.1x | 2.4% |
+| Run 2 | 08-30 15:46 to 15:59 | 14 | 146 | 123 | **15.63%** | 9.0 s | 1.8x | 1.5% |
+| Run 2 | 08-30 19:00 to 19:15 | 16 | 150 | 120 | **20.28%** | 8.8 s | 1.8x | 3.2% |
+| Run 2 | 08-30 19:30 to 19:46 | 17 | 144 | 126 | **12.03%** | 18.3 s | 3.7x | **30.0%** |
+
+Run 2 was served flawlessly for its first 102 minutes: 15,371 offered, 15,370 answered, zero
+refused. Then capacity quietly sagged. Across both campaigns 54 of 674 minutes under load were
+degraded, about 8% of the time.
+
+**This also reframes an earlier result.** The original report recorded 14 refusals that occurred
+below 175 a minute and logged them as an unexplained curiosity inside one eight minute window.
+Applying the same detection to run 1 finds that 13 of those 14 sit inside a seven minute episode.
+They were never noise. They are the same mechanism, two orders of magnitude smaller.
+
+### Why this is the service, not the test client
+
+The obvious objection is that the client degraded, especially as the first attempt at this run
+died of a memory leak. The measurement that settles it is **send ordering**.
+
+Every message is dispatched in strict sequence, but its send time is stamped after the service
+accepts the conversation. So a slow accept lets turns land out of order. That is the giveaway: a
+stalled or memory-starved client resumes and fires its backlog **in order**, whereas variable
+service-side latency **scrambles** it.
+
+Reordering sat at 1.8% across all clean minutes. The two milder episodes measured 1.5% and 3.2%,
+matching the baseline, which means the service was still accepting conversations normally and only
+generation had slowed. The worst episode reordered **30%** of its sends, so by then even accepting
+a conversation had degraded. Client memory was flat at 279 MB throughout.
+
+Nothing else about the refusals changed. All 1,101 carry a single error code
+(`GenAIToolPlannerRateLimitReached`), and `http_status` and `retry_after_s` are null on every one.
+A dip is not a different failure mode. It is the ordinary refusal arriving at a load the
+environment had been handling comfortably minutes earlier.
+
+### What this changes in the guidance
+
+**The measured ceiling is not a floor.** 175 a minute is the best case, not a guarantee. Sizing a
+real workload at the number this report measures leaves no room for the service to have a bad
+quarter of an hour, and it demonstrably does, twice in one afternoon. Keep genuine headroom, and
+make the client tolerate refusals rather than assume they will not arrive.
+
+The credit-free conclusion is unaffected: 100,201 messages across the two campaigns, every one a
+generative answer on the authenticated M365 Copilot path.
+
+### A harness bug found by running it again
+
+The first attempt at run 2 died at 17,719 messages with Windows exit code `0xC0000409`, no stack
+trace and no event log entry. The cause was in the harness: the ramp controller collected every
+turn promise into an array and only settled it at the end of the stage, so a five hour paced stage
+retained tens of thousands of closures, each holding a full response body. Replaced with a set that
+drops each promise as it settles; memory then held flat for the remaining 32,300 messages. Run 1
+had survived the same bug by luck.
