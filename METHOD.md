@@ -173,4 +173,8 @@ for `RateLimitReached`. Do not trust the HTTP status. Then repeat at a few diffe
 and look for the rate at which refusals begin.
 
 Check Copilot Credit consumption in the Power Platform admin centre before and after, because it is
-the only place it is reported.
+the only place it is reported. That check was carried out here after each of the two 50,000 message
+campaigns, and the delta was zero on both occasions.
+
+And run it more than once. Repeating the campaign is what showed that the ceiling is not constant;
+a single run cannot distinguish a stable limit from a good afternoon.

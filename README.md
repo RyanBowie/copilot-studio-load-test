@@ -1,8 +1,9 @@
 # How many people can actually use a Copilot Studio agent at once?
 
-**90,384 real messages sent to a live Copilot Studio agent published to Microsoft 365 Copilot, to
+**140,405 real messages sent to a live Copilot Studio agent published to Microsoft 365 Copilot, to
 find out where the limits really are.** Not a simulation, and not a reading of the documentation.
-Every number here came back from the service.
+Every number here came back from the service, and the headline 50,000 message run was performed
+twice on different days to show it was not a fluke.
 
 ### [Open the interactive report](https://ryanbowie.github.io/copilot-studio-load-test/)
 
@@ -47,15 +48,17 @@ depends on the gap.
 | 3 | Adding **user accounts does not help** | A second licensed account went from 100% answered alone to 22.2% answered while another user flooded the same environment |
 | 4 | Removing **tools does not help** | Every tool was deleted and republished. 7,610 of 12,000 messages were still refused, with the same error code |
 | 5 | Recovery is **immediate** | 0.2 seconds from a refusal to the next successful answer. There is no lockout to wait out |
-| 6 | There is **no caching and no determinism** | 66,769 answers to the same prompt produced 18,186 distinct texts |
-| 7 | It cost **nothing** | Zero Copilot Credits consumed, confirmed in the Power Platform admin centre |
+| 6 | There is **no caching and no determinism** | 115,675 answers to the same prompt produced 24,294 distinct texts |
+| 7 | It cost **nothing** | Zero Copilot Credits consumed, confirmed by hand in the Power Platform admin centre after each of the two 50,000 message campaigns |
+| 8 | The whole thing **reproduces** | The full 50,000 was run twice on different days: 99.74% and 97.77% answered at an identical offered rate |
+| 9 | But the ceiling **moves** | Across the two campaigns the environment lost capacity four times, refusing up to 20% of a load it had been serving perfectly minutes earlier. Roughly 8% of all time under load was degraded |
 
 ## The finding that will bite you: throttles look like successes
 
-Every one of the **22,361** refusals arrived as an ordinary **HTTP 200** message activity.
+Every one of the **23,462** refusals arrived as an ordinary **HTTP 200** message activity.
 
-* `http_status` was null on all 22,361. There is no 429 and no 503.
-* `retry_after_s` was null on all 22,361. There is no `Retry-After` header.
+* `http_status` was null on all 23,462. There is no 429 and no 503.
+* `retry_after_s` was null on all 23,462. There is no `Retry-After` header.
 * Every refusal carried the same code, `GenAIToolPlannerRateLimitReached`, with no tool involved.
 
 **A client that checks status codes sees 100% success while a quarter of its users are being turned
@@ -70,7 +73,7 @@ Time (UTC): <iso timestamp>.
 
 There is also a documentation gap worth flagging. Microsoft documents this symptom as *"The usage
 limit for generative orchestration has been reached."* That sentence **never arrived once** in
-90,384 messages, and neither did any other documented wording. Searching your logs for the
+140,405 messages, and neither did any other documented wording. Searching your logs for the
 documented text will find nothing.
 
 ## Sizing: how big a crowd can arrive at once?
@@ -102,7 +105,34 @@ and never Direct Line or a service principal, both of which do consume credits.
 
 Copilot Credit consumption is reported only at agent and tenant level in the Power Platform admin
 centre. It is absent from Application Insights and from the Dataverse audit log, so it cannot be
-asserted programmatically. **It was checked by hand after testing: no credits were consumed.**
+asserted programmatically. **It was checked by hand after the first 50,000 message campaign and
+again after the whole campaign was repeated. No credits were consumed on either occasion**, across
+all 140,405 messages. The claim is therefore verified against the billing system itself rather than
+predicted from the documented billing rules, and it held on a second independent run.
+
+## Was it a fluke? The whole thing was run twice
+
+A single result is an anecdote, so the entire 50,000 message campaign was repeated end to end on a
+different day with an identical configuration: same agent, same account, same prompt, same
+deliberate 150 messages a minute.
+
+| Measure | Run 1 | Run 2 |
+| --- | --- | --- |
+| Messages sent | 50,182 | 50,019 |
+| Answered | **99.74%** | **97.77%** |
+| Median answer time | 4.5 s | 4.3 s |
+| Answered per clock hour | 8,910 | 8,849 |
+
+The headline reproduced. Chasing the small gap produced the most useful finding in the report:
+**every one of run 2's 1,101 refusals falls inside three short episodes where the environment
+quietly lost capacity.** Take those episodes out of both campaigns and what is left is
+near-identical, 1 refusal in 49,132 against 0 in 43,126. Run 1 contains a smaller episode of its
+own, which reframes the 14 refusals it had previously logged as unexplained.
+
+**So the measured ceiling is a best case, not a floor.** It sagged four times across the two
+campaigns, refusing up to 20% of a steady load, and it gives no early warning: no 429, no
+`Retry-After`, and no softer wording as capacity fades. Size below the measured ceiling and make the
+client tolerate refusals rather than assume they will not arrive.
 
 ## What is in this repository
 

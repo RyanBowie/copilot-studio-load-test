@@ -1549,10 +1549,12 @@ never licensed and never sent a message.
 Platform admin center.** It is not in Application Insights and not in the Dataverse audit log, so
 there is no way to assert a zero delta programmatically. It has to be read by a human.
 
-**That check has been done. Copilot Credit consumption did not move.** All 90,384 messages,
-including the 50,182 message sustained run, were served with **no credit cost**. The credit-free
-claim in this report is therefore verified against the billing system itself rather than inferred
-from the documented billing rules, and it closes the last open item on the project.
+**That check has been done twice. Copilot Credit consumption did not move either time.** It was
+read after the first 50,000 message campaign and again after the whole campaign was repeated, and
+all **140,405** messages across both were served with **no credit cost**. The credit-free claim in
+this report is therefore verified against the billing system itself rather than inferred from the
+documented billing rules, and it has now survived a second independent 50,000 message run rather
+than resting on a single reading.
 
 ## Response comparison
 
@@ -1720,8 +1722,10 @@ throttle back on either: refusals carry no 429, no Retry-After and no softer wor
 fades. Keep genuine headroom, and make the client tolerate refusals rather than assume they will
 not arrive.
 
-The credit-free conclusion is unaffected: 100,201 messages across the two campaigns, every one a
-generative answer on the authenticated M365 Copilot path.
+The credit-free conclusion is unaffected and has now been checked independently for a second time:
+100,201 messages across the two campaigns, every one a generative answer on the authenticated M365
+Copilot path, and Copilot Credit consumption in the Power Platform admin centre did not move after
+either campaign.
 
 ### A harness bug found by running it again
 
