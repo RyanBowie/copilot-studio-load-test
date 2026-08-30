@@ -1834,3 +1834,49 @@ bar it sits on, in both themes.
 Both were invisible to every automated check, for the same reason as the burst ladder defect: the
 values were correct, the tests passed, and only looking at the rendered output revealed the
 problem.
+
+## A colour audit, and a bug that made the labels unreadable (2026-08-29)
+
+The user reported that answered and refused were too similar on the hourly chart. Rather than fix
+only that chart, every legend in the artefact was swept programmatically: each pair of swatches was
+compared with a weighted RGB distance in both themes, and anything under a threshold was flagged.
+
+That found two more pairs nobody had reported. On the outcome breakdown, **refused (amber) sat next
+to error (red)**, and **Empty and Consent required were two different greys** (distance 102 in light,
+138 in dark, against a threshold of 150). The palette now uses five well separated fills: green for
+answered, amber for refused, link blue for error, grey for empty, danger red for consent required.
+Moving error to blue is also the more honest encoding, because a client side transport failure is
+this harness breaking rather than a service outcome, so it should not sit in the same hue family as
+the service's own refusals.
+
+**The sweep then turned up a real bug that had been shipped from the beginning.** The stacked bar
+segment labels were written with a `fill` presentation attribute, but the stylesheet carries
+
+```
+svg text { font-family: ...; fill: var(--cp-text-muted); }
+```
+
+and a CSS rule always beats a presentation attribute. So `fill="#fff"` never applied. The labels had
+been rendering in muted grey the whole time, at a measured contrast of **2.03:1 on green and 3.11:1
+on amber** in light theme, and 1.81:1 and 1.89:1 in dark. All four are far below the 4.5:1 minimum,
+and the green case is essentially illegible.
+
+Two places in the file used a `fill` attribute on `<text>`; both were dead. The other was the
+"Measured ceiling, about 175 a minute" annotation, which was meant to be green and was also
+rendering grey. Both switched to inline `style="fill:..."`, which does win over the rule.
+
+Label colour then had to be chosen per fill rather than from a theme variable: `--cp-success` and
+`--cp-warning` are both light enough in *either* theme that dark text is correct, whereas any theme
+text variable flips to near-white in dark and fails. Final measured contrast is **5.28:1 and 8.10:1**
+in light, **9.99:1 and 10.43:1** in dark.
+
+Worth recording the general lesson, because it is the same one as the previous three defects: the
+tests and the type checker both passed throughout, and the numbers were never wrong. A presentation
+attribute silently losing to a stylesheet rule is invisible to everything except measuring the
+rendered result. The check that caught it is now the one worth keeping: compute contrast ratios and
+inter-swatch distances from `getComputedStyle` on the live page, rather than trusting what the
+source says the colour should be.
+
+Verified after the fix in both themes: zero low contrast legend pairs, outcome legend reconciles to
+140,405, 9 tabs, 10 charts, 0 empty tables, KPI cards on one row, no `[object` leakage, 0 JS errors.
+tsc clean, 67/67 tests. Published and pushed as `c89657c..e1c7c9b`.
