@@ -1802,3 +1802,35 @@ Measured: `wire_bytes=4,491,304`, `time_total=26.1 s`, `speed=172 KB/s`. Note th
 The size itself was left alone deliberately. It is dominated by the deduplicated response text for
 24,294 distinct answers, which is what makes the "Every conversation" tab searchable offline, and
 that was an explicit requirement.
+
+## Two presentation defects, both found by reading the rendered page (2026-08-30)
+
+**1. A headline card that measured the wrong thing.** The Concurrency tab led with
+**"Peak offered at once: 1,419"**. That is how many requests one laptop managed to hold open in the
+same instant, and even that number is depressed, because the client could not open the last few
+hundred sockets before the first refusals came back. It described the test rig, not the service,
+and it sat in the most prominent position on the tab.
+
+Replaced with the matched pair that actually carries the tab's argument, since the same experiment
+already contained it:
+
+| Same 1,000 messages | Peak in flight | Answered |
+| --- | --- | --- |
+| Fired in one instant | 1,000 | 166 |
+| Paced over a minute | 125 | 176 |
+
+**Concurrency moved eightfold and the answer count did not.** The paced run in fact answered
+slightly more. That is a service-side result with concurrency as the only variable, which is
+exactly what "no concurrency ceiling was ever found" needs, and it is derived from the ladder data
+rather than hardcoded.
+
+**2. Answered and refused were near-indistinguishable.** The hourly throughput chart stacked
+refused on top of answered using `--cp-accent` against `--cp-danger`. In the dark theme those are
+`#fd8ea1` and `#f87171`, two shades of the same hue, and in the light theme crimson against red is
+no better. A 14 message refused cap on a 9,000 message bar was invisible. Refusals now use
+`--cp-warning` with a `--cp-text` outline, so even a two pixel sliver separates cleanly from the
+bar it sits on, in both themes.
+
+Both were invisible to every automated check, for the same reason as the burst ladder defect: the
+values were correct, the tests passed, and only looking at the rendered output revealed the
+problem.
