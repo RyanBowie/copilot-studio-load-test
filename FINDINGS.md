@@ -1735,3 +1735,43 @@ turn promise into an array and only settled it at the end of the stage, so a fiv
 retained tens of thousands of closures, each holding a full response body. Replaced with a set that
 drops each promise as it settles; memory then held flat for the remaining 32,300 messages. Run 1
 had survived the same bug by luck.
+
+## A chart that did not add up (2026-08-30)
+
+Spotted on the published page: the burst ladder showed **"1,419 offered ... 177 served ...
+1,823 refused"**. Those numbers cannot all be true at once. 177 + 1,823 is 2,000, and the quoted
+8.8% is 177/2,000, not 177/1,419.
+
+The cause was two different units on one row. The bars are drawn from `offeredPeak` and
+`servedPeak`, which are **instantaneous concurrency** measured by the sweep line, while the
+annotations were drawn from `n`, `ok` and `thr`, which are **whole-wave totals**. The row was
+therefore quietly reporting a concurrency figure and two totals side by side as though they
+shared a denominator.
+
+It survived this long because for four of the five bursts the two are identical:
+
+| Wave | Sent | Answered | Refused | Peak in flight |
+| --- | --- | --- | --- | --- |
+| burst-200 | 200 | 182 | 18 | 200 |
+| burst-500 | 500 | 167 | 333 | 500 |
+| burst-500 | 500 | 192 | 308 | 500 |
+| burst-1000 | 1,000 | 166 | 834 | 1,000 |
+| burst-2000 | 2,000 | 177 | 1,823 | **1,419** |
+
+Only the 2,000 wave diverges, because it is the only one where the client could not get every
+socket open before the first refusals were already coming back. So the discrepancy was real and
+worth surfacing rather than papering over: **1,419 is a limit of one laptop, not of the service.**
+
+Fixed by giving each unit its own place. Wave totals now sit in the left column, where sent always
+equals answered plus refused, and each bar is labelled in its own units, "in flight at once" and
+"generating at once". Added a paragraph telling the reader the left column and the bars are
+different measures, and why the largest wave is the one place they part company.
+
+Worth noting the general lesson, because it is the third time this project has hit it: a derived
+chart can be arithmetically self-contradictory while every input to it is correct. Nothing in
+`tsc`, the 67 tests or the render audits catches it, because each number is individually right.
+Only reading the finished row as a sentence does.
+
+Verified: tsc clean, 67/67 tests, all five rows reconcile exactly, 9 tabs, 10 charts, 0 empty
+tables, 0 JS errors and `cardRows:1` in both themes, no clipped or overlapping labels. Republished
+and pushed as `f01dc87..82085eb`.
