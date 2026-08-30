@@ -1660,7 +1660,15 @@ gap produced the most useful finding in this report.
 
 **The difference is not spread across the run. Every single one of the second campaign's 1,101
 refusals falls inside one of three short degraded episodes**, and outside those minutes the two
-campaigns are indistinguishable.
+campaigns are near-identical:
+
+| Outside the degraded episodes | Offered | Refused |
+| --- | --- | --- |
+| Run 1 | 49,132 | **1** |
+| Run 2 | 43,126 | **0** |
+
+So when the environment is healthy the two results are not merely close, they are effectively
+perfect both times. The entire 1.97 point gap is three bad patches.
 
 A degraded episode is counted only where the offered load for that minute was at or under the
 measured ceiling, so it can never be an overload being correctly refused. Three consecutive minutes
@@ -1707,8 +1715,10 @@ environment had been handling comfortably minutes earlier.
 
 **The measured ceiling is not a floor.** 175 a minute is the best case, not a guarantee. Sizing a
 real workload at the number this report measures leaves no room for the service to have a bad
-quarter of an hour, and it demonstrably does, twice in one afternoon. Keep genuine headroom, and
-make the client tolerate refusals rather than assume they will not arrive.
+quarter of an hour, and it demonstrably does, twice in one afternoon. There is no early warning to
+throttle back on either: refusals carry no 429, no Retry-After and no softer wording as capacity
+fades. Keep genuine headroom, and make the client tolerate refusals rather than assume they will
+not arrive.
 
 The credit-free conclusion is unaffected: 100,201 messages across the two campaigns, every one a
 generative answer on the authenticated M365 Copilot path.
