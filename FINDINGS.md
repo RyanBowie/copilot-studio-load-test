@@ -1775,3 +1775,30 @@ Only reading the finished row as a sentence does.
 Verified: tsc clean, 67/67 tests, all five rows reconcile exactly, 9 tabs, 10 charts, 0 empty
 tables, 0 JS errors and `cardRows:1` in both themes, no clipped or overlapping labels. Republished
 and pushed as `f01dc87..82085eb`.
+
+## The page looked broken while it loaded (2026-08-30)
+
+The published artefact is one self-contained file, **4.3 MB gzipped over the wire**, measured with
+`curl -H "Accept-Encoding: gzip"`. On a slow link that is 26 seconds. The markup all sits in the
+first 0.13% of the file and the data payload follows it, so the browser paints the headline and
+every paragraph almost immediately and then leaves every table, chart and figure blank until the
+payload lands. The reader sees a finished-looking page with holes in it, which reads as broken
+rather than busy. Reported as "the page is taking a while to load".
+
+Two fixes, neither of which removes any data:
+
+1. **A boot banner** directly under the tab bar, explaining that every conversation is embedded so
+   it downloads once and then works offline. The client script removes it once everything is drawn.
+2. **The four hero figures are now emitted into the markup at build time.** Previously the opening
+   sentence rendered as "*real messages pushed through a published agent... It sustained , and*"
+   because `m-total` and `m-safe` were empty until the script ran. The script still writes the same
+   values afterwards, so the runtime path stays the single source of truth.
+
+Measured: `wire_bytes=4,491,304`, `time_total=26.1 s`, `speed=172 KB/s`. Note that PowerShell's
+`Invoke-WebRequest` reports `RawContentLength` **after** decompression, so it showed 16.3 MB and
+72 s and made the transfer look four times larger than it is. Use `curl.exe` with an explicit
+`Accept-Encoding` header and no `--compressed` when you want true wire bytes.
+
+The size itself was left alone deliberately. It is dominated by the deduplicated response text for
+24,294 distinct answers, which is what makes the "Every conversation" tab searchable offline, and
+that was an explicit requirement.
