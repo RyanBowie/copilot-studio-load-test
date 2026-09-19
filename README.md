@@ -10,6 +10,23 @@ twice on different days to show it was not a fluke.
 The report is a single self contained HTML file. No server, no build step, no dependencies. It
 opens offline, prints to PDF, and works from a file share or an email attachment.
 
+### Report presentation and publishing
+
+The report uses the approved [benchmark theme](https://ryanbowie.github.io/copilot-cowork-app-benchmark/#overview):
+purple controls, neutral light/dark surfaces, and a blue-to-purple-to-magenta title. The shared
+Clawpilot base variables remain intact; later `--cp-*` overrides supply the report palette.
+Status charts retain their distinct outcome colours and original data.
+
+Use `?scoutTheme=light` or `?scoutTheme=dark` to choose a theme explicitly. Otherwise the report
+follows the system preference, including changes while it is open. **Switch theme** updates only
+that query parameter, retaining other parameters and the fragment. Reduced-motion preferences
+suppress animation; forced-colours and print styles provide a readable non-gradient title.
+
+GitHub Pages serves the repository root from `main` using its existing automatic Pages build.
+`index.html` is the only public HTML source and output in this repository. Presentation changes
+must preserve its embedded `payload` byte for byte, all factual copy, chart geometry, filters,
+sorting and offline behaviour; they require no new load-test run or data rebuild.
+
 ---
 
 ## The short answer
