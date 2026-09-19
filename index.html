@@ -362,6 +362,9 @@ svg .axis { stroke: var(--cp-border-strong); stroke-width: 1; }
 .col-soft { fill: var(--cp-text-muted); opacity: 0.42; }
 /* Preserve a distinct refused hue and outline, including two-pixel caps. */
 .col-refused { fill: var(--cp-warning); stroke: var(--cp-text); stroke-width: 0.8; }
+#c-loadband .col-ok { fill: var(--cp-chart-blue); }
+#c-loadband .col-warn { fill: var(--cp-chart-purple); }
+#c-loadband .col-bad { fill: var(--cp-chart-magenta); }
 g.cg:hover .col { opacity: 0.72; }
 g.cg:hover .col:hover { opacity: 1; }
 .lane-bar {
@@ -527,6 +530,12 @@ footer.foot { border-top: 1px solid var(--cp-border); margin-top: 40px; padding-
     --cp-success: #207346;
     --cp-danger: #b4233e;
     --cp-warning: #8c6208;
+    --cp-chart-blue: #0877dd;
+    --cp-chart-indigo: #5364ba;
+    --cp-chart-purple: #7653ae;
+    --cp-chart-violet: #9651bb;
+    --cp-chart-magenta: #b535c3;
+    --cp-chart-track: #e8e3f0;
     --cp-chart-label: var(--cp-print-surface);
   }
   h1 { background: none; color: var(--cp-text); }
@@ -2330,13 +2339,11 @@ footer.foot { border-top: 1px solid var(--cp-border); margin-top: 40px; padding-
   // Outcomes
   var o = D.overall;
   var outcomes = [
-    { k: "Answered", v: o.ok, c: "var(--cp-success)", fg: "var(--cp-chart-label)", d: "A real generative answer came back" },
-    { k: "Refused", v: o.thr, c: "var(--cp-warning)", fg: "var(--cp-chart-label)", d: "Rate limiter refusal, delivered as HTTP 200" },
-    // Client side failures are ours, not the service's, so they get a colour
-    // from a different family rather than another shade next to the refusals.
-    { k: "Error", v: o.err, c: "var(--cp-link)", fg: "var(--cp-chart-label)", d: "Client side transport failure, timeout or abort" },
-    { k: "Empty", v: o.empty, c: "var(--cp-text-soft)", fg: "var(--cp-bg)", d: "Activities arrived but none carried text" },
-    { k: "Consent required", v: o.consent, c: "var(--cp-danger)", fg: "var(--cp-chart-label)", d: "A tool consent card blocked the turn" }
+    { k: "Answered", v: o.ok, c: "var(--cp-chart-indigo)", fg: "var(--cp-chart-label)", d: "A real generative answer came back" },
+    { k: "Refused", v: o.thr, c: "var(--cp-chart-purple)", fg: "var(--cp-chart-label)", d: "Rate limiter refusal, delivered as HTTP 200" },
+    { k: "Error", v: o.err, c: "var(--cp-chart-blue)", fg: "var(--cp-chart-label)", d: "Client side transport failure, timeout or abort" },
+    { k: "Empty", v: o.empty, c: "var(--cp-chart-violet)", fg: "var(--cp-chart-label)", d: "Activities arrived but none carried text" },
+    { k: "Consent required", v: o.consent, c: "var(--cp-chart-magenta)", fg: "var(--cp-chart-label)", d: "A tool consent card blocked the turn" }
   ];
   table("t-outcome",
     [{ t: "Outcome" }, { t: "Count", num: true }, { t: "Share", num: true }, { t: "Meaning" }],
@@ -2558,9 +2565,9 @@ footer.foot { border-top: 1px solid var(--cp-border); margin-top: 40px; padding-
       fmtAxis: function (v) { return Math.round(v) + "%"; },
       fmtValue: function (v) { return v < 0.05 ? "0" : v.toFixed(v < 10 ? 1 : 0) + "%"; },
       legend: [
-        { k: "Under 1% refused", c: "var(--cp-success)" },
-        { k: "1 to 25% refused", c: "var(--cp-warning)" },
-        { k: "Over 25% refused", c: "var(--cp-danger)" }
+        { k: "Under 1% refused", c: "var(--cp-chart-blue)" },
+        { k: "1 to 25% refused", c: "var(--cp-chart-purple)" },
+        { k: "Over 25% refused", c: "var(--cp-chart-magenta)" }
       ]
     });
 

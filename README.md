@@ -15,7 +15,13 @@ opens offline, prints to PDF, and works from a file share or an email attachment
 The report uses the approved [benchmark theme](https://ryanbowie.github.io/copilot-cowork-app-benchmark/#overview):
 purple controls, neutral light/dark surfaces, and a blue-to-purple-to-magenta title. The shared
 Clawpilot base variables remain intact; later `--cp-*` overrides supply the report palette.
-Status charts retain their distinct outcome colours and original data.
+The Summary headline chart maps its unchanged refusal bands to blue (under 1%), purple
+(1 to 25%) and magenta (over 25%), including the legend. The Summary outcome chart uses indigo
+for answered, purple for refused, blue for transport errors, violet for empty responses and
+magenta for consent required. These are theme-aware `--cp-chart-*` colours; the larger outcome
+segments use indigo/purple so their overlaid labels retain sufficient contrast. Data, labels,
+tooltips and geometry are unchanged. Semantic KPI and error labels outside these charts retain
+their green/red/amber status colours.
 
 Use `?scoutTheme=light` or `?scoutTheme=dark` to choose a theme explicitly. Otherwise the report
 follows the system preference, including changes while it is open. **Switch theme** updates only
