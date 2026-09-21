@@ -24,7 +24,7 @@ tooltips and geometry are unchanged. Semantic KPI and error labels outside these
 their green/red/amber status colours.
 
 Use `?scoutTheme=light` or `?scoutTheme=dark` to choose a theme explicitly. Otherwise the report
-follows the system preference, including changes while it is open. **Switch theme** updates only
+defaults to dark, regardless of the system preference or changes to it. **Switch theme** updates only
 that query parameter, retaining other parameters and the fragment. Reduced-motion preferences
 suppress animation; forced-colours and print styles provide a readable non-gradient title.
 
