@@ -188,3 +188,11 @@ that fails the build if any identifier survives, rather than a manual pass over 
 * **These are documented quotas being measured, not defeated.** Nothing here bypasses a control. The
   service refused exactly what it chose to refuse, and every refusal was recorded rather than
   retried around.
+
+## Licence and disclaimer
+
+**Community project, built with GitHub Copilot.** Released under the
+[MIT licence](LICENSE). It isn't a Microsoft product and isn't supported by Microsoft.
+Provided "as is", without warranty of any kind; no SLA or support commitment.
+Microsoft product names and trademarks belong to their respective owners and aren't
+covered by the MIT licence.
